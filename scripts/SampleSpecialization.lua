@@ -14,6 +14,13 @@ function SampleSpecialization.prerequisitesPresent(specializations)
 	return true;
 end;
 
+
+-- These are functions which are called by the game and is linked to the new way of how the vehicles handle specializations as to how to use them is anyones guess at the moment.
+-- registerEvents
+-- registerEventListeners
+-- registerFunctions
+-- registerOverwrittenFunctions
+
 function SampleSpecialization.registerEventListeners(vehicleType)
 	print("-- SampleSpecialization:registerEventListeners");
 	
