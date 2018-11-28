@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<modDesc descVersion="41">
+    <!-- 
+	As you can see only the parts which addSpecialization require are shown here.
+	-->
+	
+	<extraSourceFiles>
+        <sourceFile filename="scripts/AddSpecialization.lua"/>
+    </extraSourceFiles>
+	
+	
+	
+	<!--
+	l10nNameTag			- Optional 					- Make text global so we can use it on the mod. Name it like following in modDesc GAME_EXTENSION_01, GAME_EXTENSION_02... 
+	debug							- True / False	- Log the work flow 
+	
+	
+	-- The following tags can be used multiply times --
+	
+	vehicleTypeLimit	- Optional 	- True / False 	- Limit to what vehicle type to add specialization into, True = Add to this type, False = Don't add to this type. Remove tag if not used.
+	restrictions		- Optional 	- 0 / 1 		- Specialization which we must/can't have.
+	searchWords			- Optional 	- 0 / 1			- This will search for an match for this word in the specialization name
+	
+	0 = Required specialization
+	1 = Unallowed specialization
+	-->
+	
+	<addSpecialization>
+		<specialization name="SampleSpecialization" className="SampleSpecialization" filename="scripts/SampleSpecialization.lua" l10nNameTag="GAME_EXTENSION" debug="false">
+			<vehicleTypeLimit state="false" name="combineDrivable" />
+			<restrictions 	  state="0" name="drivable" />
+			<!-- <searchWords 	  state="1" name="spec" /> -->
+		</specialization>
+	</addSpecialization>
+</modDesc>
