@@ -3,7 +3,7 @@
 --
 -- @author:    	Xentro (Marcus@Xentro.se)
 -- @website:	www.Xentro.se
--- @history:	2018-11-28 - Farming Simulator 19 
+-- @history:	2018-11-27 - Farming Simulator 19 
 
 
 SampleSpecialization = {};

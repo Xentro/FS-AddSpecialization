@@ -21,14 +21,17 @@
 	restrictions		- Optional 	- 0 / 1 		- Specialization which we must/can't have.
 	searchWords			- Optional 	- 0 / 1			- This will search for an match for this word in the specialization name
 	
-	0 = Required specialization
-	1 = Unallowed specialization
+	
+	0 = Required specialization, all of these must be found to pass
+	1 = Unallowed specialization, fail if any of these are found
+	2 = Allowed specialization, if any of these are found then it will pass the checks
 	-->
 	
 	<addSpecialization>
 		<specialization name="SampleSpecialization" className="SampleSpecialization" filename="scripts/SampleSpecialization.lua" l10nNameTag="GAME_EXTENSION" debug="false">
 			<vehicleTypeLimit state="false" name="combineDrivable" />
 			<restrictions 	  state="0" name="drivable" />
+			<restrictions 	  state="2" name="motorized" />
 			<!-- <searchWords 	  state="1" name="spec" /> -->
 		</specialization>
 	</addSpecialization>
