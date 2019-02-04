@@ -1,11 +1,11 @@
 --
+-- AddSpecialization
+-- 
 -- Insert specializations into vehicleType's
---
 --
 -- @author:    	Xentro (Marcus@Xentro.se)
 -- @website:	www.Xentro.se
--- @history:	v3.1 - 2019-01-20 - Allowed specializations 
--- 				v3.0 - 2018-11-27 - Farming Simulator 19 
+-- @version:	3.11 - 2019-02-01
 --
 
 AddSpecialization = {
@@ -182,12 +182,7 @@ function AddSpecialization:add()
 					
 					-- We passed the checks, add script
 					if not forceStop then
-						local obj = g_specializationManager:getSpecializationObjectByName(ss.name);
-						
-						vehicle.specializationsByName[ss.name] = obj;
-						table.insert(vehicle.specializationNames, ss.name);
-						table.insert(vehicle.specializations, obj);
-						
+						g_vehicleTypeManager:addSpecialization(vehicleType, ss.name);
 						currentTypeCount[1] = currentTypeCount[1] + 1;
 						
 						if ss.debug then
@@ -200,18 +195,20 @@ function AddSpecialization:add()
 		
 		print(string.format(AddSpecialization.printHeader, ss.name, "Info", "We have successfully added specialization Into ( " .. currentTypeCount[1] .. " / " .. currentTypeCount[2] .. ") of the vehicleTypes."));
 		
-		-- make l10n global 
-		local i = 1;
-		while true do
-			local txt = string.format(ss.l10nNameTag .. "_%d", i);
-			
-			if not g_i18n:hasText(txt) then
-				break;
+		if ss.l10nNameTag ~= nil then
+			-- make l10n global 
+			local i = 1;
+			while true do
+				local txt = string.format(ss.l10nNameTag .. "_%d", i);
+				
+				if not g_i18n:hasText(txt) then
+					break;
+				end;
+				
+				g_i18n.texts[txt] = g_i18n:getText(txt);
+				
+				i = i + 1;
 			end;
-			
-			g_i18n.texts[txt] = g_i18n:getText(txt);
-			
-			i = i + 1;
 		end;
 	end;
 end;

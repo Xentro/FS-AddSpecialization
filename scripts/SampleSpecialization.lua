@@ -42,4 +42,6 @@ end;
 
 function SampleSpecialization:onLoad(savegame)
 	print("-- Calling SampleSpecialization:onLoad function in vehicle");
+	
+	local spec = self.spec_SampleSpecialization; -- This is created when its added to vehicleType, its using the "name" so spec_"name" if that make sense
 end;
