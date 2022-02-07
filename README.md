@@ -1,4 +1,4 @@
-# FS19-AddSpecialization
+# FS22-AddSpecialization
 Insert specializations into vehicleType's
 
 Adding an specialization is done trough modDesc.xml
