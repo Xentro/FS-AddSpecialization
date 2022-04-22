@@ -229,7 +229,7 @@ for i, ss in ipairs(AddSpecialization.specializationToAdd) do
 	table.insert(ss.searchWords,  {ss.name, AddSpecialization.RES_NOT_ALLOWED})
 	
 	if g_specializationManager:getSpecializationByName(ss.name) == nil then
-		g_specializationManager:addSpecialization(ss.name, ss.className, ss.filename, true, nil)
+		g_specializationManager:addSpecialization(ss.name, ss.className, ss.filename, nil)
 		
 		-- Key functions are called early so we need to add the specialization before it gets to that stage.
 		AddSpecialization:add()
