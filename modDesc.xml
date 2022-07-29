@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" standalone="no" ?>
-<modDesc descVersion="61">
+<modDesc descVersion="67">
     <!-- 
 	As you can see only the parts which addSpecialization require are shown here.
 	-->
@@ -22,21 +22,21 @@
 	- The following tags can be used multiply times -
 	
 	vehicleTypeLimit	- Optional 	- True / False 	- Limit to what vehicle type to add specialization into, True = Add to this type, False = Don't add to this type. Remove tag if not used.
-	restrictions		- Optional 	- 0 / 1 		- Specialization which we must/can't have.
-	searchWords			- Optional 	- 0 / 1			- This will search for an match for this word in the specialization name
+	restrictions		- Optional 	- 0 / 2 		- Specialization which we must/can't have.
+	searchWords			- Optional 	- 0 / 2			- This will search for an match for this word in the specialization name
 	
-	
+	States
 	0 = Required specialization,  all of these must be found to pass
 	1 = Unallowed specialization, fail if any of these are found
 	2 = Allowed specialization,   if any of these are found then it will pass the checks
 	-->
 	
 	<addSpecialization>
-		<specialization name="SampleSpecialization" className="SampleSpecialization" filename="scripts/SampleSpecialization.lua" l10nNameTag="GAME_EXTENSION" debug="false">
+		<specialization name="SampleSpecialization" className="SampleSpecialization" filename="scripts/SampleSpecialization.lua" l10nNameTag="GLOBAL_TEXT" debug="false">
 			<vehicleTypeLimit state="false" name="combineDrivable" />
 			<restrictions 	  state="0" name="drivable" />
 			<restrictions 	  state="2" name="motorized" />
-			<!-- <searchWords 	  state="1" name="spec" /> -->
+			<searchWords 	  state="1" name="fillVolume" />
 		</specialization>
 	</addSpecialization>
 </modDesc>

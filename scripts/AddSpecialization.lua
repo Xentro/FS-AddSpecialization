@@ -3,9 +3,8 @@
 -- 
 -- Insert specializations into vehicleType's
 --
--- @author:    	Xentro (Marcus@Xentro.se)
--- @website:	www.Xentro.se
--- @version:	3.11 - 2019-02-01
+-- Author:  Xentro
+-- Website: https://xentro.se, https://github.com/Xentro
 --
 
 AddSpecialization = {
@@ -14,16 +13,25 @@ AddSpecialization = {
 	
 	RES_REQUIRED	= 0,
 	RES_NOT_ALLOWED	= 1,
-	RES_ALLOWED		= 2,
-	
-	-- Debug text
-	MES_FOUND_REQUIRED 	  = "Found Required.",
-	MES_FOUND_NOT_ALLOWED = "Aren't allowed.",
-	MES_MISSING 		  = "Missing."
+	RES_ALLOWED		= 2
 }
 
+function AddSpecialization:init()
+	DebugUtil.printTableRecursively(AddSpecialization.specializationToAdd, "", 0, 5)
 
-function AddSpecialization:loadXMLModDesc()
+	for i, ss in ipairs(AddSpecialization.specializationToAdd) do
+		if g_specializationManager:getSpecializationByName(ss.name) == nil then
+			g_specializationManager:addSpecialization(ss.name, ss.className, ss.filename, nil)
+			
+			-- Key functions are called early so we need to add the specialization before it gets to that stage.
+			AddSpecialization:add()
+		else
+			print(string.format(AddSpecialization.printHeader, ss.name, "Error", "Specialization have been loaded already by another mod! This process will stop now."))
+		end
+	end
+end
+
+function AddSpecialization:loadModDesc()
 	local xmlFile = loadXMLFile("AddSpecializationModDesc", Utils.getFilename("modDesc.xml", g_currentModDirectory))
 
 	local i = 0
@@ -46,11 +54,15 @@ function AddSpecialization:loadXMLModDesc()
 					filename 		 = filename,
 					l10nNameTag 	 = l10nNameTag,
 					debug 	 		 = Utils.getNoNil(getXMLBool(xmlFile, key .. "#debug"), false),
-					vehicleTypeLimit = AddSpecialization:loadXMLTable(xmlFile, key, "vehicleTypeLimit", getXMLBool),
-					restrictions	 = AddSpecialization:loadXMLTable(xmlFile, key, "restrictions", 	getXMLInt),
-					searchWords		 = AddSpecialization:loadXMLTable(xmlFile, key, "searchWords", 		getXMLInt)
+					vehicleTypeLimit = AddSpecialization:loadSearchType(xmlFile, key, "vehicleTypeLimit", getXMLBool),
+					restrictions	 = AddSpecialization:loadSearchType(xmlFile, key, "restrictions", 	getXMLInt),
+					searchWords		 = AddSpecialization:loadSearchType(xmlFile, key, "searchWords", 		getXMLInt)
 				}
 				
+				-- Add specialization name to not allowed
+				table.insert(entry.restrictions, {name = entry.name, state = AddSpecialization.RES_NOT_ALLOWED})
+				table.insert(entry.searchWords,  {name = entry.name, state = AddSpecialization.RES_NOT_ALLOWED})
+
 				table.insert(AddSpecialization.specializationToAdd, entry)
 			else
 				print(string.format(AddSpecialization.printHeader, name, "Info", "File don't exist " .. filename))
@@ -63,7 +75,7 @@ function AddSpecialization:loadXMLModDesc()
 	delete(xmlFile)
 end
 
-function AddSpecialization:loadXMLTable(xmlFile, k, t, f)
+function AddSpecialization:loadSearchType(xmlFile, k, t, f)
 	local entry = {}
 	local i = 0
 	while true do
@@ -77,7 +89,7 @@ function AddSpecialization:loadXMLTable(xmlFile, k, t, f)
 			if t == "vehicleTypeLimit" then
 				entry[name] = state
 			else
-				table.insert(entry, {name, state})
+				table.insert(entry, {name = name, state = state})
 			end
 		end
 		
@@ -87,49 +99,54 @@ function AddSpecialization:loadXMLTable(xmlFile, k, t, f)
 	return entry
 end
 
-function AddSpecialization:checkTable(t, state, vehicle, currentLimitCount, debugMessage, forceStop, allowedState)
+function AddSpecialization:checkTable(t, vehicle, counter, specList)
 	for _, r in ipairs(t) do
-		if r[2] == AddSpecialization.RES_REQUIRED then
-			currentLimitCount[2] = currentLimitCount[2] + 1
-		elseif r[2] == AddSpecialization.RES_ALLOWED then
-			allowedState = true
+		if r.state == AddSpecialization.RES_REQUIRED then
+			counter.required.total = counter.required.total + 1
+			specList["Required"][r.name] = false
+		elseif r.state == AddSpecialization.RES_ALLOWED then
+			counter.allowed.total = counter.allowed.total + 1
+			specList["Allowed"][r.name] = false
 		end
 		
 		for name in pairs(vehicle.specializationsByName) do
-			if string.find(name:lower(), r[1]:lower()) ~= nil then
-				if r[2] == AddSpecialization.RES_REQUIRED then
-					currentLimitCount[1] = currentLimitCount[1] + 1
-					debugMessage[r[1]] = AddSpecialization.MES_FOUND_REQUIRED
-					
-				elseif r[2] == AddSpecialization.RES_NOT_ALLOWED then
-					forceStop = true
-					debugMessage[r[1]] = AddSpecialization.MES_FOUND_NOT_ALLOWED
-				elseif r[2] == AddSpecialization.RES_ALLOWED then
-					currentLimitCount[3] = currentLimitCount[3] + 1
+			if string.find(name:lower(), r.name:lower()) ~= nil then
+				if r.state == AddSpecialization.RES_REQUIRED then
+					counter.required.found = counter.required.found + 1
+					specList["Required"][r.name] = true
+
+				elseif r.state == AddSpecialization.RES_NOT_ALLOWED then
+					specList["Not Allowed"][r.name] = true
+					return true
+
+				elseif r.state == AddSpecialization.RES_ALLOWED then
+					counter.allowed.found = counter.allowed.found + 1
+					specList["Allowed"][r.name] = true
 				end
-				
-				if state == 1 then
-					debugMessage[name] = debugMessage[name] .. " Search Word: " .. r[1]
-				end
-				
+
 				break -- We found our target, stop this loop
 			end
 		end
 	end
-	
-	return currentLimitCount, debugMessage, forceStop, allowedState
+
+	return false
 end
 
 function AddSpecialization:add()
 	for _, ss in ipairs(AddSpecialization.specializationToAdd) do
-		local currentTypeCount 	= {0, 0} -- Current, Total
-		local isEmpty 			= true
-		local passState 		= false
+		local counter = {
+			type = {
+				current = 0,
+				total = 0
+			}
+		}
+		local skipTypeCheck = true
+		local passState = false
 		
-		for name, v in pairs(ss.vehicleTypeLimit) do
-			isEmpty = false
+		for name, state in pairs(ss.vehicleTypeLimit) do
+			skipTypeCheck = false
 			
-			if not v then
+			if not state then
 				passState = true  -- If only false then let all types which haven't been setup pass.
 			else
 				passState = false -- If we got both True/False then only allow those that are set to true.
@@ -139,61 +156,82 @@ function AddSpecialization:add()
 		
 		for vehicleType, vehicle in pairs(g_vehicleTypeManager:getTypes()) do
 			if vehicle ~= nil then
-				currentTypeCount[2] = currentTypeCount[2] + 1
+				counter.type.total = counter.type.total + 1 
 				
-				if (isEmpty 																						-- VehicleType search is empty, let it pass
+				if (skipTypeCheck 																					-- VehicleType search is empty, let it pass
 				or not passState and ss.vehicleTypeLimit[vehicleType] ~= nil and ss.vehicleTypeLimit[vehicleType]	-- Check True / False state and let pass according
 				or passState and ss.vehicleTypeLimit[vehicleType] ~= nil and ss.vehicleTypeLimit[vehicleType]		-- Only false vehicleType's have been set, let all which aren't set to False pass
 				or passState and ss.vehicleTypeLimit[vehicleType] == nil) then
-					local currentLimitCount = {0, 0, 0} -- Found, Total, Found Allowed
-					local debugMessage 		= {}
-					local forceStop 		= false
-					local allowedState 		= false
+					local forceStop = false
+					local specList = {
+						["Required"]    = {},
+						["Not Allowed"] = {},
+						["Allowed"]     = {}
+					}
+					counter.required = {
+						found = 0,
+						total = 0
+					}
+					counter.allowed = {
+						found = 0,
+						total = 0
+					}
 					
-					currentLimitCount, debugMessage, forceStop, allowedState = self:checkTable(ss.restrictions, 0, vehicle, currentLimitCount, debugMessage, forceStop, allowedState)
+					forceStop = self:checkTable(ss.restrictions, vehicle, counter, specList)
+
 					if not forceStop then
-						currentLimitCount, debugMessage, forceStop, allowedState = self:checkTable(ss.searchWords, 1, vehicle, currentLimitCount, debugMessage, forceStop, allowedState)
+						forceStop = self:checkTable(ss.searchWords, vehicle, counter, specList)
+					end
+					
+					if (counter.required.found ~= counter.required.total or counter.allowed.total > 0 and counter.allowed.found == 0) then
+						forceStop = true
 					end
 					
 					-- Do some prints
-					if (currentLimitCount[1] ~= currentLimitCount[2] or forceStop or allowedState and currentLimitCount[3] == 0) then
-						if ss.debug then
-							if currentLimitCount[2] > 0 then
-								print(string.format(AddSpecialization.printHeader, ss.name, "Info", "Found ( " .. currentLimitCount[1] .. " / " .. currentLimitCount[2] .. " ) of the required specialization's in " .. vehicleType))
-							end
-							
-							if currentLimitCount[1] ~= currentLimitCount[2] then
-								print(string.format(AddSpecialization.printHeader, ss.name, "Info", "List of specialization's"))
-								
-								for _, r in ipairs(ss.restrictions) do
-									if debugMessage[r[1]] == nil and r[1] ~= ss.name then
-										print(string.format(AddSpecialization.printHeader, ss.name, "Info", r[1] .. " " .. AddSpecialization.MES_MISSING))
-									end
-								end
-							end
-							
-							for name, t in pairs(debugMessage) do
-								print(string.format(AddSpecialization.printHeader, ss.name, "Info", name .. " " .. t))
-							end
+					if ss.debug then
+						if counter.required.total > 0 then
+							print(string.format(AddSpecialization.printHeader, ss.name, "Debug", "Inserted: " .. tostring(not forceStop) .. ", Required ( " .. counter.required.found .. " / " .. counter.required.total .. " ), Allowed ( " .. counter.allowed.found .. " / " .. counter.allowed.total .. " ) specialization's found in " .. vehicleType))
 						end
 						
-						forceStop = true
+						for typeName, type in pairs(specList) do
+							local txt = ""
+							local found = ""
+							local missing = ""
+
+							for specName, v in pairs(type) do
+								if v then
+									found = found .. specName .. ", "
+								else
+									missing = missing .. specName .. ", "
+								end
+							end
+
+							if found ~= "" then
+								txt = txt .. "Found " .. found
+							end
+
+							if missing ~= "" then
+								txt = txt .. "Missing " .. missing
+							end
+
+							if txt ~= "" then
+								-- print(string.format(AddSpecialization.printHeader, ss.name, "Debug", "   " .. typeName .. ": " .. txt)) -- List specializations found / missing for the 3 search states
+							end
+						end
 					end
 					
 					-- We passed the checks, add script
 					if not forceStop then
 						g_vehicleTypeManager:addSpecialization(vehicleType, ss.name)
-						currentTypeCount[1] = currentTypeCount[1] + 1
-						
-						if ss.debug then
-							print(string.format(AddSpecialization.printHeader, ss.name, "Info", "Inserted on " .. vehicleType))
-						end
+						counter.type.current = counter.type.current + 1
 					end
+				else
+					print(string.format(AddSpecialization.printHeader, ss.name, "Debug", "Inserted: false, vehicleType: " .. vehicleType))
 				end
 			end
 		end
 		
-		print(string.format(AddSpecialization.printHeader, ss.name, "Info", "We have successfully added specialization Into ( " .. currentTypeCount[1] .. " / " .. currentTypeCount[2] .. ") of the vehicleTypes."))
+		print(string.format(AddSpecialization.printHeader, ss.name, "Info", "We have successfully added specialization Into ( " .. counter.type.current .. " / " .. counter.type.total .. ") of the vehicleTypes."))
 		
 		-- make l10n global 
 		if ss.l10nNameTag ~= nil then
@@ -210,7 +248,7 @@ function AddSpecialization:add()
 				global.g_i18n.texts[txt] = g_i18n:getText(txt)
 
 				if ss.debug then
-					print(string.format(AddSpecialization.printHeader, ss.name, "Info", "Adding text " .. txt .. " to global"))
+					print(string.format(AddSpecialization.printHeader, ss.name, "Debug", "Adding text " .. txt .. " to global"))
 				end
 
 				i = i + 1
@@ -220,20 +258,5 @@ function AddSpecialization:add()
 end
 
 -- This can be replaced with an table too if that is much more preferred.
-AddSpecialization:loadXMLModDesc()
-
-
-for i, ss in ipairs(AddSpecialization.specializationToAdd) do
-	-- Add specialization name to not allowed
-	table.insert(ss.restrictions, {ss.name, AddSpecialization.RES_NOT_ALLOWED})
-	table.insert(ss.searchWords,  {ss.name, AddSpecialization.RES_NOT_ALLOWED})
-	
-	if g_specializationManager:getSpecializationByName(ss.name) == nil then
-		g_specializationManager:addSpecialization(ss.name, ss.className, ss.filename, nil)
-		
-		-- Key functions are called early so we need to add the specialization before it gets to that stage.
-		AddSpecialization:add()
-	else
-		print(string.format(AddSpecialization.printHeader, ss.name, "Error", "Specialization have been loaded already by another mod! This process will stop now."))
-	end
-end
+AddSpecialization:loadModDesc()
+AddSpecialization:init()

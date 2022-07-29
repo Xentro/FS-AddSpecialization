@@ -1,16 +1,14 @@
 --
 -- SampleSpecialization
 --
--- @author:    	Xentro (Marcus@Xentro.se)
--- @website:	www.Xentro.se
--- @history:	2018-11-27 - Farming Simulator 19 
+-- Author:  Xentro
+-- Website: https://xentro.se, https://github.com/Xentro
 
-
-SampleSpecialization = {}
+SampleSpecialization = {
+	MOD_NAME = g_currentModName
+}
 
 function SampleSpecialization.prerequisitesPresent(specializations)
-	print("-- SampleSpecialization.prerequisitesPresent")
-	
 	return true
 end
 
@@ -22,17 +20,10 @@ end
 -- registerOverwrittenFunctions
 
 function SampleSpecialization.registerEventListeners(vehicleType)
-	print("-- SampleSpecialization:registerEventListeners")
+	-- print("-- SampleSpecialization:registerEventListeners")
 	
-	-- Beware that function names used in older version of FS won't work in FS19!
-	local functionNames = {
-		"onPreLoad",
-		"onLoad"
-	}
-	
-	for i, v in ipairs(functionNames) do
-		SpecializationUtil.registerEventListener(vehicleType, v, SampleSpecialization)
-	end
+	SpecializationUtil.registerEventListener(vehicleType, "onPreLoad", SampleSpecialization)
+	SpecializationUtil.registerEventListener(vehicleType, "onLoad",    SampleSpecialization)
 end
 
 
@@ -42,7 +33,7 @@ function SampleSpecialization:onPreLoad(savegame)
 end
 
 function SampleSpecialization:onLoad(savegame)
-	print("-- Calling SampleSpecialization:onLoad function in vehicle")
-	
-	local spec = self.spec_SampleSpecialization -- This is created when its added to vehicleType, its using the "name" so spec_"name" if that make sense
+	self.spec_SampleSpecialization = self["spec_" .. SampleSpecialization.MOD_NAME .. ".SampleSpecialization"]
+
+	print("-- self.spec_SampleSpecialization " .. tostring(self.spec_SampleSpecialization))
 end
