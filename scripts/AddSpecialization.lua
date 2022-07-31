@@ -224,7 +224,9 @@ function AddSpecialization:add()
 						counter.type.current = counter.type.current + 1
 					end
 				else
-					print(string.format(AddSpecialization.printHeader, ss.name, "Debug", "Inserted: false, vehicleType: " .. vehicleType))
+					if ss.debug then
+						print(string.format(AddSpecialization.printHeader, ss.name, "Debug", "Inserted: false, vehicleType: " .. vehicleType))
+					end
 				end
 			end
 		end
