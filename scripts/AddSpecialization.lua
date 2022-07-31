@@ -17,8 +17,6 @@ AddSpecialization = {
 }
 
 function AddSpecialization:init()
-	DebugUtil.printTableRecursively(AddSpecialization.specializationToAdd, "", 0, 5)
-
 	for i, ss in ipairs(AddSpecialization.specializationToAdd) do
 		if g_specializationManager:getSpecializationByName(ss.name) == nil then
 			g_specializationManager:addSpecialization(ss.name, ss.className, ss.filename, nil)
